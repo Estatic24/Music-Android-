@@ -1,8 +1,7 @@
 package com.example.task3.widget
 
 import android.content.Context
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
+import android.util.Log
 import androidx.glance.appwidget.updateAll
 import com.example.task3.R
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +12,7 @@ data class MusicWidgetState(
     val title: String,
     val artist: String,
     val albumArt: Int,
+    val resId: Int,
     val isPlaying: Boolean
 ) {
     companion object {
@@ -24,18 +24,28 @@ data class MusicWidgetState(
         private const val KEY_PLAYING = "is_playing"
 
         private val trackList = listOf(
-            Track(R.raw.track1, "Track 1", R.drawable.background_music),
-            Track(R.raw.track2, "Track 2", R.drawable.background_music),
-            Track(R.raw.track3, "Track 3", R.drawable.background_music),
-            Track(R.raw.track4, "Track 4", R.drawable.background_music)
+            Track(R.raw.track1, "Track 1", "Eminem", R.drawable.background_music),
+            Track(R.raw.track2, "Track 2", "Eminem", R.drawable.background_music),
+            Track(R.raw.track3, "Track 3", "Eminem", R.drawable.background_music),
+            Track(R.raw.track4, "Track 4", "Eminem", R.drawable.background_music)
         )
 
-        data class Track(val resId: Int, val title: String, val albumArt: Int)
+        data class Track(val resId: Int, val title: String, val artist: String, val albumArt: Int)
 
         fun getCurrentState(context: Context): MusicWidgetState {
             loadState(context)
-            val track = trackList[currentIndex]
-            return MusicWidgetState(track.title, "Unknown Artist", track.albumArt, isPlaying)
+            if (trackList.isEmpty()) {
+                Log.e("MusicWidget", "trackList пуст! Виджет не сможет загрузить данные.")
+            }
+            val track = trackList.getOrNull(currentIndex) ?: return MusicWidgetState(
+                title = "Ошибка загрузки",
+                artist = "Неизвестно",
+                albumArt = R.drawable.background_music,
+                resId = R.raw.track1,
+                isPlaying = false
+            )
+            Log.d("MusicWidget", "Текущий трек: ${track.title}, isPlaying: $isPlaying")
+            return MusicWidgetState(track.title, track.artist, track.albumArt, track.resId , isPlaying)
         }
 
         fun togglePlayState(context: Context) {
@@ -56,33 +66,33 @@ data class MusicWidgetState(
         }
 
         private fun updateWidget(context: Context) {
+            loadState(context)
             saveState(context)
-            CoroutineScope(Dispatchers.Main).launch {
+
+            CoroutineScope(Dispatchers.IO).launch {
                 try {
                     MusicWidget().updateAll(context)
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    val componentName = ComponentName(context, MusicWidgetReceiver::class.java)
-                    val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
-                    appWidgetManager.notifyAppWidgetViewDataChanged(widgetIds, android.R.id.content)
-                } catch (_: Exception) {}
+                } catch (e: Exception) {
+                    Log.e("MusicWidget", "Ошибка обновления виджета: ${e.message}")
+                }
             }
         }
 
+
         private fun saveState(context: Context) {
-            try {
-                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
-                prefs.putInt(KEY_INDEX, currentIndex)
-                prefs.putBoolean(KEY_PLAYING, isPlaying)
-                prefs.apply()
-            } catch (_: Exception) {}
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            prefs.putInt(KEY_INDEX, currentIndex)
+            prefs.putBoolean(KEY_PLAYING, isPlaying)
+            prefs.apply()
         }
 
-        private fun loadState(context: Context) {
-            try {
-                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                currentIndex = prefs.getInt(KEY_INDEX, 0)
-                isPlaying = prefs.getBoolean(KEY_PLAYING, false)
-            } catch (_: Exception) {}
+        fun loadState(context: Context) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            currentIndex = prefs.getInt(KEY_INDEX, 0)
+            isPlaying = prefs.getBoolean(KEY_PLAYING, false)
+            if (currentIndex >= trackList.size) {
+                currentIndex = 0
+            }
         }
     }
 }

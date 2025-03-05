@@ -11,77 +11,124 @@ import androidx.glance.text.TextStyle
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.color.ColorProvider
-import androidx.glance.appwidget.action.actionStartService
-import androidx.glance.appwidget.cornerRadius
-import androidx.glance.background
+import androidx.glance.appwidget.action.actionRunCallback
 import com.example.task3.R
-import com.example.task3.widget.services.NextTrackService
-import com.example.task3.widget.services.PlayPauseService
-import com.example.task3.widget.services.PrevTrackService
+import android.util.Log
+import androidx.glance.action.clickable
+import androidx.glance.layout.ContentScale
+import com.example.task3.widget.services.NextTrackCallback
+import com.example.task3.widget.services.PlayPauseCallback
+import com.example.task3.widget.services.PrevTrackCallback
 
 class MusicWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val musicState = MusicWidgetState.getCurrentState(context)
+        try {
+            val musicState = MusicWidgetState.getCurrentState(context)
+            Log.d("MusicWidget", "Обновление виджета: ${musicState.title}, isPlaying: ${musicState.isPlaying}")
 
-        provideContent {
-            Column(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .background(ColorProvider(day = Color.White, night = Color(0xFF121212))) // Фон
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (musicState.title.isEmpty()) {
-                    Text(
-                        text = "Загрузка...",
-                        style = TextStyle(color = ColorProvider(day = Color.Black, night = Color.White))
+            provideContent {
+                Box(
+                    modifier = GlanceModifier.fillMaxSize()
+                ) {
+                    Image(
+                        provider = ImageProvider(musicState.albumArt),
+                        contentDescription = "Обложка",
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .height(350.dp),
+                        contentScale = ContentScale.Crop
                     )
-                } else {
+
                     Box(
-                        modifier = GlanceModifier.cornerRadius(8.dp)
-                    ) {
-                        Image(
-                            provider = ImageProvider(musicState.albumArt),
-                            contentDescription = "Обложка",
-                            modifier = GlanceModifier.size(100.dp)
-                        )
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .background(ColorProvider(day = Color(0x99000000), night = Color(0xBB000000))) // Затемнение
+                    ){
+
                     }
 
-                    Column(modifier = GlanceModifier.padding(8.dp)) {
-                        Text(
-                            text = musicState.title,
-                            style = TextStyle(color = ColorProvider(day = Color.Black, night = Color.White)),
-                            maxLines = 1,
-                            modifier = GlanceModifier.wrapContentHeight()
-                        )
-                        Text(
-                            text = musicState.artist,
-                            style = TextStyle(color = ColorProvider(day = Color.Gray, night = Color.LightGray)),
-                            maxLines = 1,
-                            modifier = GlanceModifier.wrapContentHeight()
-                        )
-                    }
-
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth(),
+                    Column(
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Button(
-                            text = "⏮",
-                            onClick = actionStartService<PrevTrackService>()
-                        )
-                        Button(
-                            text = if (musicState.isPlaying) "⏸" else "▶",
-                            onClick = actionStartService<PlayPauseService>()
-                        )
-                        Button(
-                            text = "⏭",
-                            onClick = actionStartService<NextTrackService>()
-                        )
+                        if (musicState.title.isEmpty()) {
+                            Text(
+                                text = "Загрузка...",
+                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.White))
+                            )
+                        } else {
+                            Spacer(modifier = GlanceModifier.height(10.dp))
+
+                            Text(
+                                text = musicState.title,
+                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.White)),
+                                maxLines = 1
+                            )
+                            Text(
+                                text = musicState.artist,
+                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.LightGray)),
+                                maxLines = 1
+                            )
+
+                            Spacer(modifier = GlanceModifier.defaultWeight())
+
+                            Row(
+                                modifier = GlanceModifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    provider = ImageProvider(R.drawable.previous),
+                                    contentDescription = "Предыдущий трек",
+                                    modifier = GlanceModifier
+                                        .size(36.dp)
+                                        .clickable(actionRunCallback<PrevTrackCallback>()),
+                                    colorFilter = ColorFilter.tint(
+                                        androidx.glance.unit.ColorProvider(
+                                            Color.White
+                                        )
+                                    )
+                                )
+
+                                Spacer(modifier = GlanceModifier.width(16.dp))
+
+                                Image(
+                                    provider = ImageProvider(if (musicState.isPlaying) R.drawable.pause else R.drawable.play),
+                                    contentDescription = "Воспроизведение",
+                                    modifier = GlanceModifier
+                                        .size(42.dp)
+                                        .clickable(actionRunCallback<PlayPauseCallback>()),
+                                    colorFilter = ColorFilter.tint(
+                                        androidx.glance.unit.ColorProvider(
+                                            Color.White
+                                        )
+                                    )
+                                )
+
+                                Spacer(modifier = GlanceModifier.width(16.dp))
+
+                                Image(
+                                    provider = ImageProvider(R.drawable.next),
+                                    contentDescription = "Следующий трек",
+                                    modifier = GlanceModifier
+                                        .size(36.dp)
+                                        .clickable(actionRunCallback<NextTrackCallback>()),
+                                    colorFilter = ColorFilter.tint(
+                                        androidx.glance.unit.ColorProvider(
+                                            Color.White
+                                        )
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
             }
+
+        } catch (e: Exception) {
+            Log.e("MusicWidget", "Ошибка в provideGlance: ${e.message}")
         }
     }
 }

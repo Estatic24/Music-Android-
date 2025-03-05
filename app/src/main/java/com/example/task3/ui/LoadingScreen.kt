@@ -49,6 +49,6 @@ fun LoadingScreen(navController: NavController) {
 @Preview
 @Composable
 fun PreviewLoadingScreen() {
-    val navController = rememberNavController() // Фейковый NavController
+    val navController = rememberNavController()
     LoadingScreen(navController = navController)
 }

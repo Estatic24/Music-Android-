@@ -36,20 +36,17 @@
                 android:resource="@xml/music_widget_info"/>
         </receiver>
 
-        <service
-            android:name=".widget.services.PlayPauseService"
-            android:exported="false">
-        </service>
+        <receiver
+            android:name=".widget.services.PlayPauseCallback"
+            android:exported="false" />
 
-        <service
-            android:name=".widget.services.NextTrackService"
-            android:exported="false">
-        </service>
+        <receiver
+            android:name=".widget.services.NextTrackCallback"
+            android:exported="false" />
 
-        <service
-            android:name=".widget.services.PrevTrackService"
-            android:exported="false">
-        </service>
+        <receiver
+            android:name=".widget.services.PrevTrackCallback"
+            android:exported="false" />
 
     </application>
 </manifest>
