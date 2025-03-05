@@ -13,7 +13,6 @@ data class MusicWidgetState(
     val title: String,
     val artist: String,
     val albumArt: Int,
-    val resId: Int,
     val isPlaying: Boolean
 ) {
     companion object {
@@ -25,57 +24,39 @@ data class MusicWidgetState(
         private const val KEY_PLAYING = "is_playing"
 
         private val trackList = listOf(
-            Track(R.raw.track1, "Song One", "Artist A", R.drawable.background_music),
-            Track(R.raw.track2, "Song Two", "Artist B", R.drawable.background_music),
-            Track(R.raw.track3, "Song Three", "Artist C", R.drawable.background_music),
-            Track(R.raw.track4, "Song Four", "Artist D", R.drawable.background_music)
+            Track(R.raw.track1, "Track 1", R.drawable.background_music),
+            Track(R.raw.track2, "Track 2", R.drawable.background_music),
+            Track(R.raw.track3, "Track 3", R.drawable.background_music),
+            Track(R.raw.track4, "Track 4", R.drawable.background_music)
         )
 
-        data class Track(val resId: Int, val title: String, val artist: String, val albumArt: Int)
+        data class Track(val resId: Int, val title: String, val albumArt: Int)
 
         fun getCurrentState(context: Context): MusicWidgetState {
             loadState(context)
-            val track = trackList.getOrNull(currentIndex) ?: trackList.first()
-            return MusicWidgetState(track.title, track.artist, track.albumArt, track.resId, isPlaying)
+            val track = trackList[currentIndex]
+            return MusicWidgetState(track.title, "Unknown Artist", track.albumArt, isPlaying)
         }
 
         fun togglePlayState(context: Context) {
             isPlaying = !isPlaying
-            val track = trackList[currentIndex]
-
-            if (isPlaying) {
-                MusicPlayer.play(context, track.resId)
-            } else {
-                MusicPlayer.pause()
-            }
-
-            saveState(context) // Сохраняем состояние перед обновлением
             updateWidget(context)
         }
 
         fun nextTrack(context: Context) {
             currentIndex = (currentIndex + 1) % trackList.size
             isPlaying = true
-            val track = trackList[currentIndex]
-
-            MusicPlayer.play(context, track.resId)
-
-            saveState(context) // Сохраняем состояние перед обновлением
             updateWidget(context)
         }
 
         fun prevTrack(context: Context) {
             currentIndex = if (currentIndex > 0) currentIndex - 1 else trackList.size - 1
             isPlaying = true
-            val track = trackList[currentIndex]
-
-            MusicPlayer.play(context, track.resId)
-
-            saveState(context) // Сохраняем состояние перед обновлением
             updateWidget(context)
         }
 
         private fun updateWidget(context: Context) {
+            saveState(context)
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     MusicWidget().updateAll(context)
