@@ -60,6 +60,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.6.1")
 
     implementation("androidx.compose.runtime:runtime:1.6.1")
+    implementation ("androidx.work:work-runtime-ktx:2.8.1")
 
     implementation("com.airbnb.android:lottie-compose:6.0.0")
 
@@ -71,6 +72,7 @@ dependencies {
 
     implementation("androidx.media3:media3-ui:1.2.0")
     implementation("androidx.media3:media3-session:1.2.0")
+
 
 
     implementation ("androidx.glance:glance-appwidget:1.0.0")

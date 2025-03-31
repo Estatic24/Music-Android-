@@ -16,6 +16,7 @@ import com.example.task3.R
 import android.util.Log
 import androidx.glance.action.clickable
 import androidx.glance.layout.ContentScale
+import com.example.task3.widget.MusicWidgetState.Companion.getResizedAlbumArt
 import com.example.task3.widget.services.NextTrackCallback
 import com.example.task3.widget.services.PlayPauseCallback
 import com.example.task3.widget.services.PrevTrackCallback
@@ -24,28 +25,22 @@ class MusicWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         try {
             val musicState = MusicWidgetState.getCurrentState(context)
-            Log.d("MusicWidget", "Обновление виджета: ${musicState.title}, isPlaying: ${musicState.isPlaying}")
+
+            Log.d("MusicWidget", "Обновление виджета: ${musicState.title}, isPlaying: ${musicState.isPlaying}, albumArt: ${musicState.albumArt}")
 
             provideContent {
                 Box(
                     modifier = GlanceModifier.fillMaxSize()
                 ) {
                     Image(
-                        provider = ImageProvider(musicState.albumArt),
+                        provider = ImageProvider(getResizedAlbumArt(context, musicState.albumArt)),
                         contentDescription = "Обложка",
                         modifier = GlanceModifier
                             .fillMaxSize()
-                            .height(350.dp),
+                            .height(350.dp)
+                            .background(ColorProvider(day = Color(0x99000000), night = Color(0xBB000000))), // Затемнение
                         contentScale = ContentScale.Crop
                     )
-
-                    Box(
-                        modifier = GlanceModifier
-                            .fillMaxSize()
-                            .background(ColorProvider(day = Color(0x99000000), night = Color(0xBB000000))) // Затемнение
-                    ){
-
-                    }
 
                     Column(
                         modifier = GlanceModifier
@@ -54,81 +49,65 @@ class MusicWidget : GlanceAppWidget() {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (musicState.title.isEmpty()) {
-                            Text(
-                                text = "Загрузка...",
-                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.White))
+                        Spacer(modifier = GlanceModifier.height(10.dp))
+
+                        Text(
+                            text = musicState.title.ifEmpty { "Загрузка..." },
+                            style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.White)),
+                            maxLines = 1
+                        )
+                        Text(
+                            text = musicState.artist,
+                            style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.LightGray)),
+                            maxLines = 1
+                        )
+
+                        Spacer(modifier = GlanceModifier.height(24.dp))
+
+                        Row(
+                            modifier = GlanceModifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Image(
+                                provider = ImageProvider(R.drawable.previous),
+                                contentDescription = "Предыдущий трек",
+                                modifier = GlanceModifier
+                                    .size(36.dp)
+                                    .clickable(actionRunCallback<PrevTrackCallback>()),
+                                colorFilter = ColorFilter.tint(androidx.glance.unit.ColorProvider(Color.White))
                             )
-                        } else {
-                            Spacer(modifier = GlanceModifier.height(10.dp))
 
-                            Text(
-                                text = musicState.title,
-                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.White)),
-                                maxLines = 1
-                            )
-                            Text(
-                                text = musicState.artist,
-                                style = TextStyle(color = androidx.glance.unit.ColorProvider(Color.LightGray)),
-                                maxLines = 1
+                            Spacer(modifier = GlanceModifier.width(16.dp))
+
+                            Image(
+                                provider = ImageProvider(if (musicState.isPlaying) R.drawable.pause else R.drawable.play),
+                                contentDescription = "Воспроизведение",
+                                modifier = GlanceModifier
+                                    .size(42.dp)
+                                    .clickable(actionRunCallback<PlayPauseCallback>()),
+                                colorFilter = ColorFilter.tint(androidx.glance.unit.ColorProvider(Color.White))
                             )
 
-                            Spacer(modifier = GlanceModifier.defaultWeight())
+                            Spacer(modifier = GlanceModifier.width(16.dp))
 
-                            Row(
-                                modifier = GlanceModifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    provider = ImageProvider(R.drawable.previous),
-                                    contentDescription = "Предыдущий трек",
-                                    modifier = GlanceModifier
-                                        .size(36.dp)
-                                        .clickable(actionRunCallback<PrevTrackCallback>()),
-                                    colorFilter = ColorFilter.tint(
-                                        androidx.glance.unit.ColorProvider(
-                                            Color.White
-                                        )
-                                    )
-                                )
-
-                                Spacer(modifier = GlanceModifier.width(16.dp))
-
-                                Image(
-                                    provider = ImageProvider(if (musicState.isPlaying) R.drawable.pause else R.drawable.play),
-                                    contentDescription = "Воспроизведение",
-                                    modifier = GlanceModifier
-                                        .size(42.dp)
-                                        .clickable(actionRunCallback<PlayPauseCallback>()),
-                                    colorFilter = ColorFilter.tint(
-                                        androidx.glance.unit.ColorProvider(
-                                            Color.White
-                                        )
-                                    )
-                                )
-
-                                Spacer(modifier = GlanceModifier.width(16.dp))
-
-                                Image(
-                                    provider = ImageProvider(R.drawable.next),
-                                    contentDescription = "Следующий трек",
-                                    modifier = GlanceModifier
-                                        .size(36.dp)
-                                        .clickable(actionRunCallback<NextTrackCallback>()),
-                                    colorFilter = ColorFilter.tint(
-                                        androidx.glance.unit.ColorProvider(
-                                            Color.White
-                                        )
-                                    )
-                                )
-                            }
+                            Image(
+                                provider = ImageProvider(R.drawable.next),
+                                contentDescription = "Следующий трек",
+                                modifier = GlanceModifier
+                                    .size(36.dp)
+                                    .clickable(actionRunCallback<NextTrackCallback>()),
+                                colorFilter = ColorFilter.tint(androidx.glance.unit.ColorProvider(Color.White))
+                            )
                         }
                     }
                 }
             }
+            kotlinx.coroutines.delay(300)
+            MusicWidget().updateAll(context)
 
         } catch (e: Exception) {
             Log.e("MusicWidget", "Ошибка в provideGlance: ${e.message}")
         }
     }
+
 }

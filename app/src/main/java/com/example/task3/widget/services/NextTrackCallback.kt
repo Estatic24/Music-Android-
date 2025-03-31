@@ -17,10 +17,12 @@ class PrevTrackCallback : BroadcastReceiver(), ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         MusicWidgetState.prevTrack(context)
         MusicWidget().update(context, glanceId)
+        MusicWidget().updateAll(context)
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
         CoroutineScope(Dispatchers.Main).launch {
+            MusicWidgetState.togglePlayState(context)
             MusicWidget().updateAll(context)
         }
     }
